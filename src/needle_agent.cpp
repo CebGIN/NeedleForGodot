@@ -121,7 +121,11 @@ void NeedleAgent::set_threads(int p_threads) {
   if (model_loaded) WARN_PRINT("NeedleAgent: threads change ignored (library already loaded)");
 }
 
-static inline bool _validate_json_syntax(const String &p_str) { JSON json; return json.parse(p_str) == OK; }
+static inline bool _validate_json_syntax(const String &p_str) {
+  Ref<JSON> json;
+  json.instantiate();
+  return json->parse(p_str) == OK;
+}
 
 String NeedleAgent::get_tools() const { return tools_json; }
 void NeedleAgent::set_tools(const String &p_tools) {

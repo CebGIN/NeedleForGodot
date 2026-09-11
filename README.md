@@ -10,24 +10,7 @@ A Godot 4.x GDExtension wrapping the [Cactus Needle 2](https://huggingface.co/Ca
 
 ## Installation
 
-### 1. Download the engine and model
-
-```bash
-pip install cactus-needle
-needle fetch --generation 2 --out ./addons/needle_for_godot/bin/linux/
-```
-
-Or with `huggingface_hub`:
-
-```bash
-pip install huggingface_hub
-huggingface-cli download Cactus-Compute/needle2 needle2.cact --local-dir ./addons/needle_for_godot/models/
-huggingface-cli download Cactus-Compute/needle2 libneedle.so --local-dir ./addons/needle_for_godot/bin/linux/
-```
-
-> **Note:** These commands assume you're running from inside your Godot project directory (the one with `project.godot`).
-
-### 2. Copy files into your project
+### 1. Copy files into your project
 
 ```
 your_project/
@@ -46,7 +29,7 @@ your_project/
 └── project.godot
 ```
 
-### 3. The `.gdextension` file
+### 2. The `.gdextension` file
 
 The extension descriptor maps platform-specific builds (relative to the addon folder):
 
@@ -73,24 +56,12 @@ func _ready():
     needle = NeedleAgent.new()
 
     # Define tools (must be set before load_model)
-    needle.set_tools(JSON.stringify([{
-        "name": "get_weather",
-        "description": "Weather",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "city": {"type": "string"}
-            },
-            "required": ["city"]
-        }
-    }]))
+    needle.set_tools("YOUR JSON TOOLS DECLARATION")
 
     # Connect signals
     needle.loaded.connect(_on_loaded)
     needle.failed.connect(_on_failed)
-    needle.completed.connect(_on_completed)
 
-    add_child(needle)
     needle.load_model("res://addons/needle_for_godot/models/needle2.cact")
 
 func _on_loaded():
@@ -168,19 +139,6 @@ var result = needle.complete("What is the weather in London?")
 
 Returns a Dictionary with the engine's JSON response (see [Response Format](#response-format) below).
 
-#### `query(text: String) -> void`
-
-**Asynchronous** query. Runs inference on a background thread. Emits `completed` when done.
-
-```gdscript
-needle.query("What is the weather in London?")
-
-func _on_completed(result: Dictionary):
-    print(result)
-```
-
-Only one query can run at a time. If a query is already in progress, it waits for the previous one to finish.
-
 #### `reset() -> void`
 
 Reset the conversation state. Clears the KV cache and conversation history. Tools and model remain loaded.
@@ -192,15 +150,6 @@ needle.reset()
 #### `is_model_loaded() -> bool`
 
 Returns `true` if the model has been loaded successfully.
-
-#### `get_needle_memory_bytes() -> int64`
-
-Returns the Needle engine's RSS memory contribution in bytes (Linux only). Returns 0 on other platforms.
-
-```gdscript
-var mem_mb = needle.get_needle_memory_bytes() / (1024 * 1024)
-print("Needle using %d MB" % mem_mb)
-```
 
 ### Signals
 
@@ -240,18 +189,19 @@ Key fields:
 - `confidence`: Model's confidence in the output (0.0–1.0)
 - `decode_tps` / `prefill_tps`: Inference speed metrics (tokens/sec)
 
-For text responses, `function_calls` is empty and the raw text may be in `reasoning` or other fields depending on the engine version.
+For text responses, `function_calls` is empty and the raw text may be in `reasoning`.
 
 ## Performance Tuning
 
 ### KV Window
 
-The `kv_window` property controls how many recent tokens the model attends to. **Lower values are faster** for tool-calling because the model generates short responses:
+The `kv_window` property controls how many recent tokens the model attends to. **Lower values are faster** for tool-calling because the model generates short responses, tune it according to the hardware you are aiming and speeds needed:
 
 ```gdscript
-needle.kv_window = 16   # Fast (100–170 ms per query)
-# needle.kv_window = 256  # Default (200–330 ms per query)
+needle.kv_window = 16   # Fast (100–170 ms)
+needle.kv_window = 256  # Default (200–330 ms per query)
 ```
+ms times are examples on my laptop while testing.
 
 Benchmark results (5 tools, `kv_window=16`):
 
@@ -272,13 +222,9 @@ needle.threads = 0   # Auto (recommended)
 
 ### Tool Descriptions
 
-Shorter tool descriptions = faster prefill. Use concise names:
+Shorter tool descriptions = faster prefill.
 
 ```gdscript
-# Fast
-"description": "Weather"
-
-# Slow
 "description": "Get the current weather conditions for a specified city"
 ```
 
@@ -299,11 +245,10 @@ For conversations, don't reset — the model uses previous context.
 ## Architecture
 
 ```
-NeedleAgent (Node)
+NeedleAgent
 ├── load_model()     → dlopen(libneedle.so) → needle_load(bytes)
 ├── set_tools()      → needle_init(prompt, tools_json)
-├── complete()       → needle_complete(text, max_tokens, buffer, size) [sync]
-├── query()          → needle_complete(...) on worker thread [async]
+├── complete()       → needle_complete(text, max_tokens, buffer, size)
 └── reset()          → needle_reset()
 ```
 
@@ -312,7 +257,6 @@ The extension uses `dlopen`/`dlsym` to load Needle at runtime — no compile-tim
 ### Thread Safety
 
 - `api_mutex` protects all Needle C API calls
-- `query()` runs inference on a `Thread`, with results delivered via `_process()` on the main thread
 - `complete()` blocks the calling thread (safe to call from `_ready()` or coroutines)
 
 ### Memory
@@ -335,14 +279,3 @@ Requires:
 - `dlopen`/`dlsym` (Linux/macOS) or `LoadLibrary` (Windows)
 
 Build output: `demo/addons/needle_for_godot/bin/linux/libneedle_for_godot.linux.template_debug.x86_64.so`
-
-## Troubleshooting
-
-| Error | Cause | Fix |
-|-------|-------|-----|
-| `"Library not found"` | `libneedle.so/dll` not in search paths | Place in `addons/needle_for_godot/bin/linux/` or set `library_path` |
-| `"Model not found"` | `needle2.cact` not found | Place in `addons/needle_for_godot/models/` or set `model_path` |
-| `"needle_init failed"` | Tool JSON malformed | Validate your tool definitions |
-| `"Model not loaded"` | `query()` called before `load_model()` completes | Wait for `loaded` signal |
-| Deadlock / hang | Calling `query()` from `loaded` signal | Use `complete()` in signal handler, or defer `query()` |
-| Empty tools skip | `set_tools("")` is a no-op | Pass valid JSON tool array |
