@@ -1,12 +1,6 @@
 # Needle for Godot — GDExtension
 
-A Godot 4.x GDExtension wrapping the [Cactus Needle 2](https://huggingface.co/Cactus-Compute/needle2) agentic LLM (45M params, ~14 MB) for tool-calling directly from GDScript.
-
-## Requirements
-
-- **Godot** 4.1 or later (tested on 4.7.2)
-- **libneedle.so** (Linux), **needle.dll** (Windows), or **libneedle.dylib** (macOS) — downloaded from HuggingFace
-- **needle2.cact** — model weights (~14 MB)
+A Godot 4.x GDExtension wrapping the [Cactus Needle 2](https://huggingface.co/Cactus-Compute/needle2) "agentic" LLM (45M params, ~14 MB) for tool-calling directly from GDScript.
 
 ## Installation
 
