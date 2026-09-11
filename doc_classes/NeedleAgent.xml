@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="NeedleAgent" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Agentic LLM for tool-calling from GDScript using the Cactus Needle engine.
+	</brief_description>
+	<description>
+		A lightweight wrapper around the [Cactus Needle 2](https://huggingface.co/Cactus-Compute/needle2) agentic LLM (45M params, ~14 MB) for tool-calling directly from GDScript.
+
+		Each [NeedleAgent] instance loads its own copy of the Needle library via [code]dlopen[/code], giving fully isolated model state, conversation history, and tool definitions. Multiple instances can coexist.
+
+		[b]Basic usage:[/b]
+		[codeblock]
+		var needle = NeedleAgent.new()
+		needle.set_tools('[{"name": "get_weather", "description": "Weather", "parameters": {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}}]')
+		needle.load_model("res://addons/needle_for_godot/models/needle2.cact")
+		var result = needle.complete("What is the weather in London?")
+		[/codeblock]
+
+		[b]Note:[/b] [method complete] is synchronous and blocks the calling thread. For non-blocking use, wrap it in a [Thread].
+	</description>
+	<tutorials>
+		<link title="README">https://github.com/your-repo/NeedleForGodot/blob/main/README.md</link>
+	</tutorials>
+	<methods>
+		<method name="load_model" qualifiers="void">
+			<return type="void" />
+			<param index="0" name="path" type="String" />
+			<description>
+				Loads the Needle library (if not already loaded) and the model from [param path]. The path can be a [code]res://[/code] project path or an absolute filesystem path.
+
+				Emits [signal loaded] on success or [signal failed] on error. Sets [member model_path] to [param path].
+
+				[i]Note:[/i] [member kv_window] and [member threads] are immutable after loading — set them before calling this method.
+			</description>
+		</method>
+		<method name="complete">
+			<return type="Dictionary" />
+			<param index="0" name="text" type="String" />
+			<description>
+				Sends [param text] to the loaded model and returns a Dictionary containing the engine's JSON response. Blocks the calling thread until the response is ready.
+
+				Returns a Dictionary with keys including [code]type[/code] ([code]"call"[/code], [code]"text"[/code], or [code]"error"[/code]), [code]function_calls[/code] (Array of tool calls with [code]name[/code] and [code]arguments[/code]), [code]success[/code] ([bool]), and [code]confidence[/code] ([float]).
+
+				Returns an error Dictionary with [code]type = "error"[/code] if the model is not loaded or no tools are defined.
+			</description>
+		</method>
+		<method name="reset">
+			<return type="void" />
+			<description>
+				Resets the conversation state. Clears the KV cache and conversation history. Tools and model remain loaded. If tools are defined, the engine is re-initialized automatically.
+			</description>
+		</method>
+		<method name="set_tools">
+			<return type="void" />
+			<param index="0" name="tools" type="String" />
+			<description>
+				Sets the available tools as a JSON string following the OpenAI function-calling format. Each tool should have [code]name[/code] (String), [code]description[/code] (String), and [code]parameters[/code] (Dictionary with JSON Schema).
+
+				If the model is already loaded, this reinitializes the engine with the new tools immediately. Passing an empty string is a no-op.
+			</description>
+		</method>
+		<method name="get_tools" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns the currently defined tools as a JSON string.
+			</description>
+		</method>
+		<method name="is_model_loaded" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if the model has been loaded successfully.
+			</description>
+		</method>
+		<method name="get_needle_memory_bytes" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the Needle engine's RSS memory contribution in bytes. Linux only — returns 0 on other platforms.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="model_path" type="String" setter="set_model_path" getter="get_model_path" default="&quot;&quot;">
+			Path to the [code].cact[/code] model file. Set before calling [method load_model].
+		</member>
+		<member name="system_prompt" type="String" setter="set_system_prompt" getter="get_system_prompt" default="&quot;&quot;">
+			System prompt prepended to every query sent to the model.
+		</member>
+		<member name="max_new_tokens" type="int" setter="set_max_new_tokens" getter="get_max_new_tokens" default="256">
+			Maximum number of tokens to generate per response. Range: 1–1024.
+		</member>
+		<member name="auto_download" type="bool" setter="set_auto_download" getter="get_auto_download" default="true">
+			If [code]true[/code], the agent automatically searches for the model and library on initialization.
+		</member>
+		<member name="kv_window" type="int" setter="set_kv_window" getter="get_kv_window" default="256">
+			KV cache window size. Lower values are faster for tool-calling (16 recommended). Immutable after [method load_model] is called. Range: 16–1024.
+		</member>
+		<member name="threads" type="int" setter="set_threads" getter="get_threads" default="0">
+			Number of internal threads for the Needle engine. 0 = auto-detect (recommended). Immutable after [method load_model] is called. Range: 0–16.
+		</member>
+	</members>
+	<signals>
+		<signal name="loaded">
+			<description>
+				Emitted when the model has been loaded successfully and is ready for inference.
+			</description>
+		</signal>
+		<signal name="failed">
+			<param index="0" name="error" type="String" />
+			<description>
+				Emitted when any error occurs during library loading, model loading, or initialization. [param error] contains a human-readable error message.
+			</description>
+		</signal>
+	</signals>
+	<constants>
+	</constants>
+</class>

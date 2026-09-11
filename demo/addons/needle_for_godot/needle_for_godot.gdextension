@@ -1,0 +1,26 @@
+[configuration]
+
+entry_symbol = "needle_library_init"
+compatibility_minimum = "4.1"
+reloadable = true
+
+[libraries]
+
+; -- Linux (editor uses template_debug build) --
+linux.editor.x86_64 = "./bin/linux/libneedle_for_godot.linux.template_debug.x86_64.so"
+linux.debug.x86_64 = "./bin/linux/libneedle_for_godot.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "./bin/linux/libneedle_for_godot.linux.template_release.x86_64.so"
+
+; -- macOS --
+macos.editor = "./bin/macos/libneedle_for_godot.macos.template_debug.dylib"
+macos.debug = "./bin/macos/libneedle_for_godot.macos.template_debug.dylib"
+macos.release = "./bin/macos/libneedle_for_godot.macos.template_release.dylib"
+
+; -- Windows --
+windows.editor.x86_64 = "./bin/windows/needle_for_godot.windows.template_debug.x86_64.dll"
+windows.debug.x86_64 = "./bin/windows/needle_for_godot.windows.template_debug.x86_64.dll"
+windows.release.x86_64 = "./bin/windows/needle_for_godot.windows.template_release.x86_64.dll"
+
+[icons]
+
+NeedleAgent = "res://addons/needle_for_godot/icons/needle_agent.svg"

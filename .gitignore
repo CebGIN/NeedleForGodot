@@ -1,0 +1,32 @@
+# Godot build dependencies
+godot-cpp/
+
+# Build artifacts
+bin/
+*.o
+*.os
+*.obj
+*.exp
+*.lib
+*.ilk
+*.pdb
+sconsign.dblite
+.cache/
+.scsub
+.sconsign
+.sconf_temp/
+compile_commands.json
+
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+demo/.godot/

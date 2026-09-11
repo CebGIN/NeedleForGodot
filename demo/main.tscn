@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://dg8ojhbex4u8u"]
+
+[ext_resource type="Script" uid="uid://coe72wlhny863" path="res://main.gd" id="1_script"]
+
+[node name="Main" type="Control" unique_id=2123446580]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+tools = "[  {    \"name\": \"set_lights\",    \"description\": \"Turn lights on or off or dim them.\",    \"parameters\": {      \"type\": \"object\",      \"properties\": {        \"room\": {          \"type\": \"string\",          \"description\": \"Which room.\"        },        \"state\": {          \"type\": \"string\",          \"enum\": [            \"on\",            \"off\"          ]        },        \"brightness\": {          \"type\": \"integer\",          \"description\": \"Percent 1-100.\"        }      },      \"required\": [        \"room\",        \"state\"      ]    }  },  {    \"name\": \"set_thermostat\",    \"description\": \"Set the target temperature.\",    \"parameters\": {      \"type\": \"object\",      \"properties\": {        \"room\": {          \"type\": \"string\"        },        \"temperature\": {          \"type\": \"number\"        },        \"mode\": {          \"type\": \"string\",          \"enum\": [            \"heat\",            \"cool\",            \"auto\"          ]        }      },      \"required\": [        \"room\",        \"temperature\"      ]    }  },  {    \"name\": \"lock_door\",    \"description\": \"Lock a door.\",    \"parameters\": {      \"type\": \"object\",      \"properties\": {        \"door\": {          \"type\": \"string\",          \"description\": \"Which door.\"        }      },      \"required\": [        \"door\"      ]    }  }]"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=846638489]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="VBoxContainer" unique_id=1948948212]
+layout_mode = 2
+text = "NeedleForGodot Demo"
+horizontal_alignment = 1
+
+[node name="Status" type="RichTextLabel" parent="VBoxContainer" unique_id=1730166705]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "Loading..."
+
+[node name="InputRow" type="HBoxContainer" parent="VBoxContainer" unique_id=1223176896]
+layout_mode = 2
+
+[node name="LineEdit" type="LineEdit" parent="VBoxContainer/InputRow" unique_id=2045698072]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Enter a query..."
+
+[node name="SendButton" type="Button" parent="VBoxContainer/InputRow" unique_id=853624486]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Send"
+
+[connection signal="pressed" from="VBoxContainer/InputRow/SendButton" to="." method="submit_text"]
